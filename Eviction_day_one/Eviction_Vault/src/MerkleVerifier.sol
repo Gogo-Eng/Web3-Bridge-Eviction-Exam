@@ -16,7 +16,6 @@ library MerkleVerifier {
         }
     }
 
-    // Gas-optimized leaf computation (address + uint256)
     function computeLeaf(address account, uint256 value) internal pure returns (bytes32) {
         bytes32 leaf;
         assembly {

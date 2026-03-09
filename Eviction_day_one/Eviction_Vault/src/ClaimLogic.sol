@@ -21,15 +21,14 @@ abstract contract ClaimLogic {
         address user,
         uint256 amount,
         bytes32[] calldata proof,
-        bytes calldata signature,      // can be empty if signature not required
-        address signer                 // can be address(0) if no signature
+        bytes calldata signature,
+        address signer
     ) internal {
         if (hasClaimed[user]) revert AlreadyClaimed();
 
         bytes32 leaf = MerkleVerifier.computeLeaf(user, amount);
         MerkleVerifier.verifyProof(merkleRoot, proof, leaf);
 
-        // Optional signature check
         if (signature.length > 0 && signer != address(0)) {
             bytes32 messageHash = keccak256(abi.encodePacked(user, amount));
             SignatureVerifier.verify(messageHash, signature, signer);
@@ -40,6 +39,5 @@ abstract contract ClaimLogic {
         emit Claimed(user, amount);
     }
 
-    // Child contract must implement how the reward is sent
     function _sendReward(address to, uint256 amount) internal virtual;
 }

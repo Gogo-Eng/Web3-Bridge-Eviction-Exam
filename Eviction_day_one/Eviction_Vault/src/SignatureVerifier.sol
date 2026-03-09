@@ -15,7 +15,6 @@ library SignatureVerifier {
         bytes calldata signature,
         address expectedSigner
     ) internal pure {
-        // This is the correct OZ 5.x way
         bytes32 ethSignedHash = MessageHashUtils.toEthSignedMessageHash(messageHash);
         address recovered = ECDSA.recover(ethSignedHash, signature);
 
