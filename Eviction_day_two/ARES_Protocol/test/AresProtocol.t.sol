@@ -12,12 +12,11 @@ import {GovernanceGuard}    from "../src/modules/GovernanceGuard.sol";
 import {TimelockAres}       from "../src/modules/Delay.sol";
 
 contract AresSecurityFocusedTest is Test {
-
     address admin    = makeAddr("admin");
     address guardian = makeAddr("guardian");
     address proposer = makeAddr("proposer");
     address attacker = makeAddr("attacker");
-    address alice    = makeAddr("alice");
+    address gogo    = makeAddr("gogo");
 
     uint256 signer1Pk = 0xA11CE;
     uint256 signer2Pk = 0xB0B;
@@ -91,7 +90,7 @@ contract AresSecurityFocusedTest is Test {
     }
 
     function _validSignatures(uint256 nonce, address target, uint256 value, bytes memory data) internal view returns (bytes[] memory sigs) {
-        bytes32 digest = keccak256(abi.encodePacked(
+        bytes32 _hash = keccak256(abi.encodePacked(
             "\x19\x01",
             _domain(),
             keccak256(abi.encode(
@@ -100,8 +99,8 @@ contract AresSecurityFocusedTest is Test {
             ))
         ));
 
-        (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(signer1Pk, digest);
-        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(signer2Pk, digest);
+        (uint8 v1, bytes32 r1, bytes32 s1) = vm.sign(signer1Pk, _hash);
+        (uint8 v2, bytes32 r2, bytes32 s2) = vm.sign(signer2Pk, _hash);
 
         bytes memory sig1 = abi.encodePacked(r1, s1, v1);
         bytes memory sig2 = abi.encodePacked(r2, s2, v2);
@@ -114,11 +113,11 @@ contract AresSecurityFocusedTest is Test {
     function test_Reentrancy_AttackerTriesToReenterVault() public {
         vm.expectRevert();
         vm.prank(attacker);
-        vault.execute(alice, 1 ether, "");
+        vault.execute(gogo, 1 ether, "");
     }
 
     function test_MerkleClaim_DoubleClaimSameRound_Reverts() public {
-        bytes32 leaf = keccak256(abi.encodePacked(alice, uint256(100e18)));
+        bytes32 leaf = keccak256(abi.encodePacked(gogo, uint256(100e18)));
         bytes32 root = leaf;
 
         vm.prank(admin);
@@ -126,10 +125,10 @@ contract AresSecurityFocusedTest is Test {
 
         bytes32[] memory proof = new bytes32[](0);
 
-        authorizer.claim(alice, 100e18, proof);
+        authorizer.claim(gogo, 100e18, proof);
 
         vm.expectRevert("Already claimed this round");
-        authorizer.claim(alice, 100e18, proof);
+        authorizer.claim(gogo, 100e18, proof);
     }
 
 
@@ -137,15 +136,15 @@ contract AresSecurityFocusedTest is Test {
         uint256 nonce = authorizer.currentNonce();
         bytes memory data = "";
 
-        bytes32 digest = keccak256(abi.encodePacked(
+        bytes32 _hash = keccak256(abi.encodePacked(
             "\x19\x01", _domain(),
             keccak256(abi.encode(
             keccak256("TreasuryAction(uint256 nonce,address target,uint256 value,bytes data)"),
-            nonce, alice, 0, keccak256(data)
+            nonce, gogo, 0, keccak256(data)
             ))
         ));
 
-        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signer1Pk, digest);
+        (uint8 v, bytes32 r, bytes32 s) = vm.sign(signer1Pk, _hash);
         bytes memory sig = abi.encodePacked(r, s, v);
 
         bytes[] memory sigs = new bytes[](2);
@@ -154,7 +153,7 @@ contract AresSecurityFocusedTest is Test {
 
         vm.expectRevert();
         vm.prank(address(executor));
-        authorizer.verifyThresholdSignatures(nonce, alice, 0, data, sigs);
+        authorizer.verifyThresholdSignatures(nonce, gogo, 0, data, sigs);
     }
 
     function test_Timelock_PrematureExecution_Reverts() public {
@@ -218,12 +217,12 @@ contract AresSecurityFocusedTest is Test {
     }
 
     function test_DrainLimit_Exceeded_Reverts() public {
-        address[] memory targets   = new address[](1); targets[0]   = alice;
+        address[] memory targets   = new address[](1); targets[0]   = gogo;
         uint256[] memory values    = new uint256[](1); values[0]    = DAILY_LIMIT + 1;
         bytes[]   memory calldatas = new bytes[](1);   calldatas[0] = "";
 
         bytes[][] memory sigs = new bytes[][](1);
-        sigs[0] = _validSignatures(authorizer.currentNonce(), alice, values[0], "");
+        sigs[0] = _validSignatures(authorizer.currentNonce(), gogo, values[0], "");
 
         bytes memory payload = abi.encodeWithSelector(
             TreasuryExecutor.executeBatch.selector,
@@ -245,6 +244,6 @@ contract AresSecurityFocusedTest is Test {
     function test_Vault_DirectCallByNonExecutor_Reverts() public {
         vm.expectRevert();
         vm.prank(attacker);
-        vault.execute(alice, 1 ether, "");
+        vault.execute(gogo, 1 ether, "");
     }
 }
