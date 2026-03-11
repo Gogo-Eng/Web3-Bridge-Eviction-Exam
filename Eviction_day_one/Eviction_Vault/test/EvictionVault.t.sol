@@ -21,11 +21,7 @@ contract EvictionVaultTest is Test {
     bytes32[] proof;
 
     function setUp() public {
-
-        // compute leaf
         bytes32 leaf = MerkleVerifier.computeLeaf(user, amount);
-
-        // simple tree (single leaf)
         root = leaf;
 
         vault = new EvictionVault(root);
