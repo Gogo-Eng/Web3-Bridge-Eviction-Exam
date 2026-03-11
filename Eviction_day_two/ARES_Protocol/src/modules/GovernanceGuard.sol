@@ -52,7 +52,6 @@ contract GovernanceGuard is AccessControl, Pausable {
     }
 
         function checkAndRecordDrain(uint256 amount) external onlyRole(EXECUTOR_ROLE) whenNotPaused {
-        // Reset counter if 24 hours have passed
         if (block.timestamp >= lastDrainReset + 1 days) {
             drainedToday = 0;
             lastDrainReset = block.timestamp;
@@ -92,9 +91,12 @@ contract GovernanceGuard is AccessControl, Pausable {
         require(owner != address(0), "No deposit found");
         require(!depositRefunded[proposalId], "Already refunded");
         depositRefunded[proposalId] = true;
-        payable(owner).transfer(address(this).balance < proposalDeposit ? address(this).balance : proposalDeposit);
+
+        (bool success, ) = payable(owner).call{value: proposalDeposit}("");
+        require(success, "Refund failed");
+
         emit DepositRefunded(proposalId, owner);
-    }
+}
 
     function slashDeposit(bytes32 proposalId) external onlyRole(GUARDIAN_ROLE) {
         require(depositOwner[proposalId] != address(0), "No deposit found");

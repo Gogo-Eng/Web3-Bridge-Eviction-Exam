@@ -5,6 +5,7 @@ import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {ITreasuryVault} from "../interfaces/ITreasuryVault.sol";
 import {ITreasuryAuthorizer} from "../interfaces/ITreasuryAuthorizer.sol";
+import {IGovernanceGuard} from "../interfaces/IGovernanceGuard.sol";
 
 contract TreasuryExecutor is AccessControl, ReentrancyGuard {
     bytes32 public constant TIMELOCK_ROLE = keccak256("TIMELOCK_ROLE");
@@ -12,12 +13,13 @@ contract TreasuryExecutor is AccessControl, ReentrancyGuard {
 
     address public vault;
     address public authorizer;
-
+    address public guard;
     event BatchExecuted(address indexed initiator, uint256 actionCount);
 
-    constructor(address _vault, address _authorizer, address admin) {
+    constructor(address _vault, address _authorizer, address _guard, address admin) {
         vault = _vault;
         authorizer = _authorizer;
+        guard = _guard;
         _grantRole(DEFAULT_ADMIN_ROLE, admin);
         _grantRole(TIMELOCK_ROLE, admin);
     }
@@ -47,6 +49,10 @@ contract TreasuryExecutor is AccessControl, ReentrancyGuard {
                 calldatas[i],
                 signatures[i]
             );
+            
+            if (values[i] > 0) {
+                IGovernanceGuard(guard).checkAndRecordDrain(values[i]);
+            }
 
             ITreasuryVault(vault).execute(targets[i], values[i], calldatas[i]);
         }

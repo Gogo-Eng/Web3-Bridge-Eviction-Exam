@@ -1,66 +1,74 @@
-## Foundry
+# ARES Protocol
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+A modular treasury execution system for managing on-chain assets securely.
 
-Foundry consists of:
+---
 
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
+## What It Does
 
-## Documentation
+ARES lets a protocol governance system propose, approve, and execute treasury transactions — with mandatory time delays, threshold signatures, and economic attack protections built in.
 
-https://book.getfoundry.sh/
+---
 
-## Usage
+## Modules
 
-### Build
+| File | What it does |
+|---|---|
+| `ARESToken.sol` | The protocol token |
+| `AssetHolder.sol` | Holds all funds (ETH + ERC20) |
+| `Delay.sol` | Enforces a waiting period before execution |
+| `Execution.sol` | Coordinates signature checks and fund dispatch |
+| `Verification.sol` | Verifies multi-sig approvals and handles reward claims |
+| `GovernanceGuard.sol` | Prevents drains, griefing, and flash loan attacks |
 
-```shell
-$ forge build
+---
+
+## How a Transaction Works
+
+```
+1. Signers sign the action off-chain (3-of-5 required)
+2. Proposer queues it in the timelock + places a deposit
+3. Community reviews during the delay window (48hrs minimum)
+4. Anyone executes after the delay passes
+5. Executor verifies signatures → checks drain limit → vault releases funds
 ```
 
-### Test
+---
 
-```shell
-$ forge test
+## Setup
+
+```bash
+git clone <repo>
+cd ARES_Protocol
+forge install
+forge build
+forge test
 ```
 
-### Format
+---
 
-```shell
-$ forge fmt
+## Deploy Order
+
+```
+1. ARESToken
+2. TreasuryVault
+3. GovernanceGuard
+4. TreasuryAuthorizer
+5. TreasuryExecutor
+6. TimelockAres
 ```
 
-### Gas Snapshots
+---
 
-```shell
-$ forge snapshot
-```
+## Key Security Rules
 
-### Anvil
+- No single address can move funds alone — threshold signatures required
+- All actions wait a minimum of 48 hours before execution
+- A guardian can pause the entire protocol instantly if an attack is detected
+- Daily drain limit caps how much can leave the treasury per day
+- Proposers must stake ETH — lost if their proposal is malicious
 
-```shell
-$ anvil
-```
+---
 
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+## License
+MIT
