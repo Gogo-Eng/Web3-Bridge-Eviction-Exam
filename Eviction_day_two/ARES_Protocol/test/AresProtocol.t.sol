@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import "forge-std/console.sol";
 
-import {ARESToken}          from "../src/modules/ARESToken.sol";
+import {ARESToken}          from "../src/core/ARESToken.sol";
 import {TreasuryVault}      from "../src/modules/AssetHolder.sol";
 import {TreasuryAuthorizer} from "../src/modules/Verification.sol";
 import {TreasuryExecutor}   from "../src/modules/Execution.sol";
